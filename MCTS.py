@@ -14,12 +14,13 @@ class MCTSAgent():
         self.iters = iters
         self.c = c
         self.state_stats = {} 
+        self.history = []
 
     def UCB(self, q, N, n, epsilon=1e-8):
         return q + self.c* np.sqrt(np.log(N + epsilon) / (n + epsilon))
 
-    def rollout(self, board):
-        curPlayer = 1
+    def rollout(self, board, curPlayer):
+        C = curPlayer
         valids = self.game.getValidMoves(board, 1)
         valid_acts = np.where(valids == 1)[0]
         selected_act = np.random.choice(valid_acts, replace=False)
@@ -29,70 +30,86 @@ class MCTSAgent():
             valid_acts = np.where(valids == 1)[0]
             selected_act = np.random.choice(valid_acts, replace=False)
             board, curPlayer = self.game.getNextState(board, curPlayer, selected_act)
-        return self.game.getGameEnded(board, 1)    
+        return self.game.getGameEnded(board, -C)    
 
-    def traverse(self, valids, board):
-        print('Traverse valids', valids)
-        # Den ginetai swsto update sto ucb
-        # Xanoume to indexapo to valid actions logw argmax
-        possible_acts = np.arange(self.game.getActionSize())[valids==1] # logw autounou
-        ucb_values = []
-        for a in possible_acts:
-            next_s, _ = self.game.getNextState(board, 1, a)
-            next_s = str(next_s.flatten())
-            
-            if next_s not in self.state_stats:
-                print('Mpika next_s')
-                self.state_stats[next_s] = np.array([0,0])
-
-            ucb_values.append(self.UCB(self.state_stats[next_s][1], self.iters, self.state_stats[next_s][0]))
+    def selection(self, board, curPlayer):
+        valids = self.game.getValidMoves(board, curPlayer)
+        print('Selection valids', valids)
+        possible_acts = np.arange(self.game.getActionSize()) # logw autounou
+        valid_acts = possible_acts[valids==1]
+        neg_acts = possible_acts[valids==0]
+        ucb_values = np.zeros(self.game.getActionSize())
+        ucb_values[neg_acts] = -1e+11 
+        for a in valid_acts:
+            next_s, _ = self.game.getNextState(board, curPlayer, a)
+            next_s = str(next_s.flatten())               
+            ucb_values[a] = self.UCB(self.state_stats[next_s][1], self.iters, self.state_stats[next_s][0])
         print('\nucb', ucb_values)    
         action = np.argmax(ucb_values)
+        print('\naction: ', action)
         return action
 
-    def simulate(self, board):
+    def expand(self, board, curPlayer):
+        print('expand player', curPlayer)
+        possible_acts = np.arange(self.game.getActionSize()) # logw autounou
+        valids = self.game.getValidMoves(board, curPlayer)
+        valid_acts = possible_acts[valids==1]
+        for act in valid_acts:
+            next_s, _ = self.game.getNextState(board, curPlayer, act)
+            next_s = str(next_s.flatten())
+            if next_s not in self.state_stats:
+                self.state_stats[next_s] = np.array([0.,0.])
+
+
+    def simulate(self, board, curPlayer):
         # Get current state and check if it is Terminal_State
         s = str(board.flatten())
-        print(s)
+        self.history.append(s)
+        print('lala: ', s)
         if self.game.getGameEnded(board, 1) != 0:
             q = self.game.getGameEnded(board, 1)
             return q
         
         # Check if the current state is visited and call rollout
         if s not in self.S:
-            # koita to count tou s
-            # diaforetiko dict gia to count mi gamisw kamia panagia!
             self.S[s] = 1
             if self.sim == 0:
                 print('Prwto iter MONO')
-                self.state_stats[s] = np.array([0,0])
-
-            #self.state_stats[s] = np.array([0,0])
-            q = self.rollout(board)
-            print('Rollout: ', q)    
-            return q
+                self.state_stats[s] = np.array([0.,0.])
+                curPlayer = 1 
+            q = self.rollout(board, curPlayer)
+            print('Qvalue: ', q)  
+            print("Update")
+            for s in self.history:
+                print('updt', s)
+                self.state_stats[s][0] += 1
+                self.state_stats[s][1] = (self.state_stats[s][1] + q) / self.state_stats[s][0]
+            curPlayer = 1
+            print("stats", self.state_stats)
+            self.history = []
+            return q # kanei kai update mazi
         
         # Take valid actions and traverse
-        valids = self.game.getValidMoves(board, 1)
-        action = self.traverse(valids, board)
-        print('\naction', action)
-        # Play the action in the MCTS_simulation and go to the next state
-        next_s, curPlayer = self.game.getNextState(board, 1, action)
-        next_s = self.game.getCanonicalForm(next_s, curPlayer)
-        
+        self.expand(board, curPlayer)
+        chosen_action = self.selection(board, curPlayer)
+
+        next_s, curPlayer = self.game.getNextState(board, curPlayer, chosen_action)
+        print('Mpainw anadromi me player: ' + str(curPlayer) + '  next_s: ' + str(next_s.flatten()))
         # Recursion
-        q = self.simulate(next_s)
+        q = self.simulate(next_s, curPlayer)
 
         # UPDATE put a function in the future
-        print("\nUPDate")
-        self.state_stats[s][0] += 1
-        self.state_stats[s][1] = (self.state_stats[s][1] + q) / self.state_stats[s][0] 
-        print('stats:' , self.state_stats)
-        return q
+        # print("\nUPDate")
+        # self.state_stats[s][0] += 1
+        # self.state_stats[s][1] = (self.state_stats[s][1] + q) / self.state_stats[s][0] 
+        # print('stats:' , self.state_stats)
+        # #list(map(print, self.state_stats.items()))
+        # return q
 
     def play(self, board):
+        curPlayer = 1
         for self.sim in range(self.iters):
             print("\niter: " + str(self.sim))
-            self.simulate(board)
+            self.simulate(board, curPlayer)
         
                 
