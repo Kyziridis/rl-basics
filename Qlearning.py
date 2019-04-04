@@ -41,21 +41,20 @@ class QAgent():
         return(board, curPlayer)
 
     def simulate(self):
+        init_board = self.game.getInitBoard()
+        s = str(init_board.flatten())
         temp = []
         for ep in self.episodes:
+            board = init_board
             curPlayer = 1
             if ep == 0:
                 self.Q[s] = 0.
 
-            init_board = self.game.getInitBoard()
-            s = str(init_board.flatten())
-
             possible_acts = np.arange(self.game.getActionSize())
-            valids = self.game.getValidMoves(init_board, 1)
+            valids = self.game.getValidMoves(board, 1)
             valid_acts = possible_acts[valids==1]
 
-            board = init_board
-            while self.game.getGameEnded(board, 1) != 0:
+            while self.game.getGameEnded(board, 1) == 0:
 
                 for action in valid_acts:
                     next_s, _ = self.game.getNextState(board, 1, action)
@@ -88,7 +87,7 @@ class QAgent():
                 # check if new state is terminal
 
                 possible_acts = np.arange(self.game.getActionSize())
-                valids = self.game.getValidMoves(init_board, 1)
+                valids = self.game.getValidMoves(board, 1)
                 valid_acts = possible_acts[valids==1]
 
                 for action in valid_acts:
