@@ -5,7 +5,7 @@ import numpy as np
 import sys
 from time import time
 import matplotlib.pyplot as plt
-import pickle 
+import pickle
 
 class END(Exception): pass
 
@@ -23,7 +23,7 @@ class QAgent():
         self.gamma = 0.99
         self.tau = 0.01
         self.e = 1
-        self.dc = 0.999
+        self.dc = 0.99
         self.e_ = 0.01
 
     def update(self, R, Q_prime, s):
@@ -59,8 +59,9 @@ class QAgent():
         actions_q[neg_acts] = -1e+9
         for action in valid_acts:
             next_s, _ = self.game.getNextState(board, 1, action)
-            s_next = str(next_s.flatten())
-            temp.append(s_next) 
+            #s_next = str(next_s.flatten())
+            s_next = next_s.tostring()
+            temp.append(s_next)
             if s_next not in self.Q:
                 self.Q[s_next] = 0.
             #print('Q[new_state]: ', self.Q[s_next])
@@ -88,13 +89,13 @@ class QAgent():
             #         self.flag = False
             #         print('flag', self.flag)
             if ret == 1:
-                self.wins += 1 
+                self.wins += 1
             elif ret==-1:
                 self.loss += 1
-            else: 
-                self.draw += 1 
+            else:
+                self.draw += 1
             end = time()
-            print("\nEpisode: %s  |  Reward: %s " %(self.ep, ret))
+            #print("\nEpisode: %s  |  Reward: %s " %(self.ep, ret))
             # self.ep += 1
             raise END
         else:
@@ -112,13 +113,21 @@ class QAgent():
 
     def simulate(self):
         init_board = self.game.getInitBoard()
-        s = str(init_board.flatten())
+        s = init_board.tostring()
+        #s = str(init_board.flatten())
         temp = []
         for self.ep in range(self.episodes):
             board = init_board
-            curPlayer = 1
+            if self.ep % 2 == 0:
+                curPlayer = 1
+            else:
+                curPlayer = -1
+            #curPlayer = 1
             if self.ep == 0:
                 self.Q[s] = 0.
+
+            if curPlayer == -1:
+                board, curPlayer = self.opponent_play(board, curPlayer)
 
             # Expand
             temp, actions_q = self.init_q(board)
@@ -128,15 +137,16 @@ class QAgent():
 
                     # Choose action with e_greedy policy
                     action = self.e_greedy(board, actions_q)
-                    
+
                     # My player exerts action!
                     board, curPlayer = self.game.getNextState(board, curPlayer, action)
-                    s = str(board.flatten())
+                    #s = str(board.flatten())
+                    s = board.tostring()
                     # check if my action resulted in terminal state
                     # If board == Terminal then update and break
                     self.check_terminal(board, s)
 
-                    # Opponent exerts random action! 
+                    # Opponent exerts random action!
                     board, curPlayer = self.opponent_play(board, curPlayer)
                     # check if opponent's action resulted in terminal state
                     # If board == Terminal then update and break
@@ -156,14 +166,14 @@ class QAgent():
     def train(self):
         general_time = time()
         self.simulate()
-        print('Q:\n' + str(self.Q))
-        print('Wins: %s | Loss: %s | Draw: %s |' %(self.wins, self.loss, self.draw)\
-         + ' Total Training Time: ' + str(round(time()-general_time))  )
-        plt.figure()
-        plt.plot(self.epsilon)
-        plt.xlabel('Iterations')
-        plt.ylabel('Epsilon')
-        plt.show()
+        #print('Q:\n' + str(self.Q))
+        #print('Wins: %s | Loss: %s | Draw: %s |' %(self.wins, self.loss, self.draw)\
+        # + ' Total Training Time: ' + str(round(time()-general_time))  )
+        #plt.figure()
+        #plt.plot(self.epsilon)
+        #plt.xlabel('Iterations')
+        #plt.ylabel('Epsilon')
+        #plt.show()
         with open('Q_table.pickle', 'wb') as handle:
             pickle.dump(self.Q, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
@@ -178,9 +188,10 @@ class QAgent():
 
         for action in valid_acts:
             next_s, _ = self.game.getNextState(board, 1, action)
-            s_next = str(next_s.flatten())
+            #s_next = str(next_s.flatten())
+            s_next = next_s.tostring()
             actions_q[action] = self.Q[s_next]
-            
+
         max_ = max(actions_q)
         max_indx = np.where(actions_q == max_)[0]
         if len(max_indx) != 1:
@@ -188,5 +199,3 @@ class QAgent():
             return action
         final_action = np.argmax(actions_q)
         return final_action
-
-
