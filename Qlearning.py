@@ -9,6 +9,7 @@ import pickle
 from tqdm import tqdm
 
 class END(Exception): pass
+# alalalala
 
 class QAgent():
     def __init__(self, game, episodes, lr, epsilon, dc, e_min):
