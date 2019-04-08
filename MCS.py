@@ -11,6 +11,7 @@ class MCSAgent():
 
     def simulate(self, board):
         initialBoard = board
+        #
         curPlayer = 1
         qValues = []
         qValues = [0] * (self.game.getActionSize())
