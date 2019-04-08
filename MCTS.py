@@ -26,14 +26,20 @@ class MCTSAgent():
         for i in range(self.rollout_iter):
             board = initBoard
             valids = self.game.getValidMoves(board, 1)
-            valid_acts = np.where(valids == 1)[0]
-            selected_act = np.random.choice(valid_acts, replace=False)
-            board, curPlayer = self.game.getNextState(board, C, selected_act)
+            # valid_acts = np.where(valids == 1)[0]
+            # selected_act = np.random.choice(valid_acts, replace=False)
+            act = np.random.randint(self.game.getActionSize())
+            while valids[act] !=1:
+                act = np.random.randint(self.game.getActionSize())
+            board, curPlayer = self.game.getNextState(board, C, act)
             while self.game.getGameEnded(board, curPlayer)==0:
                 valids = self.game.getValidMoves(board, 1)
-                valid_acts = np.where(valids == 1)[0]
-                selected_act = np.random.choice(valid_acts, replace=False)
-                board, curPlayer = self.game.getNextState(board, curPlayer, selected_act)
+                # valid_acts = np.where(valids == 1)[0]
+                act = np.random.randint(self.game.getActionSize())
+                while valids[act] !=1:
+                    act = np.random.randint(self.game.getActionSize())
+                # selected_act = np.random.choice(valid_acts, replace=False)
+                board, curPlayer = self.game.getNextState(board, curPlayer, act)
             Q.append(self.game.getGameEnded(board, rollout_player))
         return np.mean(Q)
 
@@ -51,6 +57,12 @@ class MCTSAgent():
             next_s = next_s.tostring()
             ucb_values[a] = self.UCB(self.state_stats[next_s][1], self.iters, self.state_stats[next_s][0])
         #print('\nucb', ucb_values)
+        max_ = max(ucb_values)
+        max_indx = np.where(ucb_values == max_)[0]
+        if len(max_indx) != 1:
+            action = np.random.choice(max_indx)
+            #print('Random act', action)
+            return action
         action = np.argmax(ucb_values)
         #print('\naction: ', action)
         return action
@@ -128,16 +140,22 @@ class MCTSAgent():
         possible_acts = np.arange(self.game.getActionSize())
         valids = self.game.getValidMoves(board, 1)
         valid_acts = possible_acts[valids==1]
-        #print('Poss: ', possible_acts)
-        #print('valids: ', valids)
-        #print('Valid_acts: ', valid_acts)
+        # print('Poss: ', possible_acts)
+        # print('valids: ', valids)
+        # print('Valid_acts: ', valid_acts)
 
         if len(valid_acts) == 1:
             return valid_acts[0]
         else:
             candidates = list(self.state_stats.values())[1:len(valid_acts)+1]
             candidates = np.array(list(map(lambda x: x[1], candidates)))
-            #print('stats', list(self.state_stats.items())[1:len(valid_acts)+1])
+            # print('stats', list(self.state_stats.items())[1:len(valid_acts)+1])
+            max_indx = np.where(candidates == max(candidates))[0]
+            if len(max_indx) != 1:
+                action = np.random.choice(valid_acts[max_indx])
+               # print('Random', action)
+                return action
+
             indx_max = candidates.argmax()
             #print("indx_max: ", indx_max)
             action = valid_acts[indx_max]

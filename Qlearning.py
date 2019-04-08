@@ -6,14 +6,16 @@ import sys
 from time import time
 import matplotlib.pyplot as plt
 import pickle
+from tqdm import tqdm
 
 class END(Exception): pass
 
 class QAgent():
-    def __init__(self, game, episodes, lr):
+    def __init__(self, game, episodes, lr, epsilon, dc, e_min):
         self.Q = {}
         self.game = game
         self.episodes = episodes
+        self.ep = 0
         self.lr = lr
         self.epsilon = []
         self.flag = True
@@ -22,9 +24,14 @@ class QAgent():
         self.loss = 0
         self.gamma = 0.99
         self.tau = 0.01
-        self.e = 1
-        self.dc = 0.99
-        self.e_ = 0.01
+        self.e = epsilon
+        self.dc = dc
+        self.e_ = e_min
+        self.config = {'epsilon:':self.e,
+                        'discount_e:':self.dc,
+                        'epsilon_min:':self.e_,
+                        'gamma:':self.gamma,
+                        'learning rate:': self.lr}
 
     def update(self, R, Q_prime, s):
         Q_new = self.Q[s] + self.lr*(R + self.gamma*Q_prime - self.Q[s])
@@ -34,6 +41,7 @@ class QAgent():
         if np.random.rand() <= self.e :
             valid_acts = np.where(actions_q!=-1e+9)[0]
             action = np.random.choice(valid_acts)
+            self.epsilon.append(self.e)
             if self.e > self.e_:
                 self.e *= self.dc
             #print('Epsilon Action: ', action)
@@ -46,7 +54,6 @@ class QAgent():
             return action
         action = np.argmax(actions_q)
         #print('Policy Action: ', action)
-        self.epsilon.append(self.e)
         return action
 
     def init_q(self, board):
@@ -70,12 +77,16 @@ class QAgent():
 
 
     def opponent_play(self, board, curPlayer):
-        possible_acts = np.arange(self.game.getActionSize())
-        valids = self.game.getValidMoves(board, curPlayer)
-        valid_acts = possible_acts[valids==1]
-        action = np.random.choice(valid_acts)
+        # possible_acts = np.arange(self.game.getActionSize())
+        # valids = self.game.getValidMoves(board, curPlayer)
+        # valid_acts = possible_acts[valids==1]
+        # action = np.random.choice(valid_acts)
         #print('Action diko tou: ', action)
-        board, curPlayer = self.game.getNextState(board, curPlayer, action)
+        act = np.random.randint(self.game.getActionSize())
+        valids = self.game.getValidMoves(board,1)
+        while valids[act] !=1:
+            act = np.random.randint(self.game.getActionSize())
+        board, curPlayer = self.game.getNextState(board, curPlayer, act)
         return board, curPlayer
 
 
@@ -88,6 +99,7 @@ class QAgent():
             #     if 0.0 not in self.Q.values():
             #         self.flag = False
             #         print('flag', self.flag)
+            #         print('Episode', self.ep)
             if ret == 1:
                 self.wins += 1
             elif ret==-1:
@@ -114,19 +126,18 @@ class QAgent():
     def simulate(self):
         init_board = self.game.getInitBoard()
         s = init_board.tostring()
-        #s = str(init_board.flatten())
         temp = []
-        for self.ep in range(self.episodes):
+        for self.ep in tqdm(range(self.episodes)):
             board = init_board
+            # Init the first episode
+            if self.ep == 0:
+                self.Q[s] = 0.
+
+            # Check the players
             if self.ep % 2 == 0:
                 curPlayer = 1
             else:
                 curPlayer = -1
-            #curPlayer = 1
-            if self.ep == 0:
-                self.Q[s] = 0.
-
-            if curPlayer == -1:
                 board, curPlayer = self.opponent_play(board, curPlayer)
 
             # Expand
@@ -134,13 +145,12 @@ class QAgent():
             self.start = time()
             try:
                 while self.game.getGameEnded(board, 1) == 0:
-
+                    
                     # Choose action with e_greedy policy
                     action = self.e_greedy(board, actions_q)
 
                     # My player exerts action!
                     board, curPlayer = self.game.getNextState(board, curPlayer, action)
-                    #s = str(board.flatten())
                     s = board.tostring()
                     # check if my action resulted in terminal state
                     # If board == Terminal then update and break
@@ -165,17 +175,24 @@ class QAgent():
 
     def train(self):
         general_time = time()
+        print('Train Q-Agent for %s episodes >_' %self.episodes)
         self.simulate()
         #print('Q:\n' + str(self.Q))
-        #print('Wins: %s | Loss: %s | Draw: %s |' %(self.wins, self.loss, self.draw)\
-        # + ' Total Training Time: ' + str(round(time()-general_time))  )
-        #plt.figure()
-        #plt.plot(self.epsilon)
-        #plt.xlabel('Iterations')
-        #plt.ylabel('Epsilon')
-        #plt.show()
+        print('Wins: %s | Loss: %s | Draw: %s |' %(self.wins, self.loss, self.draw)\
+         + ' Total Training Time: ' + str(round(time()-general_time)) + ' secs'  )
+        print('\nConfiguration: ', self.config)
+        plt.figure()
+        plt.plot(self.epsilon)
+        plt.xlabel('Iterations')
+        plt.ylabel('Epsilon')
+        plt.title('e-greedy curve')
+        plt.show()
+
         with open('Q_table.pickle', 'wb') as handle:
             pickle.dump(self.Q, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+        print('\nTraining finished and Qtable is exported')
+        print('')
 
 
     def play(self, board):
