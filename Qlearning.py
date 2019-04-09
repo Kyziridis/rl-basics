@@ -206,8 +206,8 @@ class QAgent():
 
         for action in valid_acts:
             next_s, _ = self.game.getNextState(board, 1, action)
-            #s_next = str(next_s.flatten())
             s_next = next_s.tostring()
+            if s_next not in self.Q: self.Q[s_next] = 0.
             actions_q[action] = self.Q[s_next]
 
         max_ = max(actions_q)
