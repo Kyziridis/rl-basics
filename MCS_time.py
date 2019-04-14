@@ -1,24 +1,30 @@
 import numpy as np
+from time import time
+from datetime import datetime
 
 '''
 write MCS player as a small exercise before you implement the MCTS
 '''
 
 class MCSAgent():
-    def __init__(self, game, nSims):
+    def __init__(self, game, nSims, time):
         self.game = game
+        self.time = time
         self.nSims = nSims
 
     def simulate(self, board):
         initialBoard = board
-        #
         curPlayer = 1
         qValues = []
         qValues = [0] * (self.game.getActionSize())
         valids = self.game.getValidMoves(board, 1)
+        #print('valids:', valids)
         self.candidate_acts = np.where(valids == 1)[0]
-        for a in self.candidate_acts:
-            for i in range(self.nSims):
+        #n_acts = np.zeros(self.game.getActionSize(), dtype=np.float32)
+        #n_acts[valids != 1] =
+        start = datetime.now()
+        for sim in range(self.nSims):
+            for a in self.candidate_acts:
                 board = initialBoard
                 board, curPlayer = self.game.getNextState(board, 1, a)
                 while self.game.getGameEnded(board, curPlayer)==0:
@@ -30,9 +36,17 @@ class MCSAgent():
                         act = np.random.randint(self.game.getActionSize())
                     board, curPlayer = self.game.getNextState(board, curPlayer, act)
                 qValues[a] += self.game.getGameEnded(board, 1)
-        qValues = np.array(qValues) / self.nSims
+            c = datetime.now() - start
+            microsecs = c.microseconds
+            if c.seconds > 0:
+                microsecs = c.seconds * 1e6 + c.microseconds
+            #print(microsecs)
+            if microsecs >= self.time:
+                break
+        #print('Sims:', sim + 1)
+        qValues = np.array(qValues) / (sim + 1)
+        #print('qValues:', qValues)
         return qValues
-
 
     def play(self, board):
         qValues = self.simulate(board)

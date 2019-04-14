@@ -3,10 +3,10 @@ write MCTS player by yourself
 '''
 import numpy as np
 import sys
-
+from datetime import datetime
 
 class MCTSAgent():
-    def __init__(self, game, iters, c, rollout_iter):
+    def __init__(self, game, iters, c, rollout_iter, time):
         self.game = game
         self.S = {}
         self.iters = iters
@@ -14,6 +14,7 @@ class MCTSAgent():
         self.state_stats = {}
         self.history = []
         self.rollout_iter = rollout_iter
+        self.time = time
 
     def UCB(self, q, N, n, epsilon=1e-8):
         return q + self.c* np.sqrt(np.log(N + epsilon) / (n + epsilon))
@@ -131,11 +132,20 @@ class MCTSAgent():
         self.S={}
         self.state_stats = {}
         curPlayer = 1
+        start = datetime.now()
         for self.sim in range(self.iters):
             #print('\niter: ', self.sim)
             #print('---------------------')
             self.history = []
+            #print(self.sim)
             self.simulate(board, curPlayer)
+            c = datetime.now() - start
+            microsecs = c.microseconds
+            if c.seconds > 0:
+                microsecs = c.seconds * 1e6 + c.microseconds
+            #print(microsecs)
+            if microsecs >= self.time:
+                break
 
         possible_acts = np.arange(self.game.getActionSize())
         valids = self.game.getValidMoves(board, 1)
@@ -147,9 +157,11 @@ class MCTSAgent():
         if len(valid_acts) == 1:
             return valid_acts[0]
         else:
+            #print(self.state_stats)
             candidates = list(self.state_stats.values())[1:len(valid_acts)+1]
             candidates = np.array(list(map(lambda x: x[1], candidates)))
             # print('stats', list(self.state_stats.items())[1:len(valid_acts)+1])
+            #print(candidates)
             max_indx = np.where(candidates == max(candidates))[0]
             if len(max_indx) != 1:
                 action = np.random.choice(valid_acts[max_indx])
