@@ -91,7 +91,16 @@ class MCTSAgent():
                 self.state_stats[s][1] = self.state_stats[s][1] + (q - self.state_stats[s][1]) / self.state_stats[s][0]
 
     def simulate(self, board, curPlayer):
+        
 
+        c = datetime.now() - self.start
+        #microsecs = c.microseconds
+        #if c.seconds > 0:
+        self.microsecs = c.seconds * 1e6 + c.microseconds
+        #print(microsecs)
+        if self.microsecs >= self.time:
+            return
+ 
         #s = str(board.flatten())
         s = board.tostring()
         self.history.append(s)
@@ -123,7 +132,7 @@ class MCTSAgent():
 
         # Traverse
         next_s, curPlayer = self.game.getNextState(board, curPlayer, chosen_action)
-
+         
         # Recursion
         self.simulate(next_s, curPlayer)
 
@@ -132,19 +141,23 @@ class MCTSAgent():
         self.S={}
         self.state_stats = {}
         curPlayer = 1
-        start = datetime.now()
+        self.start = datetime.now()
         for self.sim in range(self.iters):
             #print('\niter: ', self.sim)
             #print('---------------------')
             self.history = []
             #print(self.sim)
             self.simulate(board, curPlayer)
-            c = datetime.now() - start
-            microsecs = c.microseconds
-            if c.seconds > 0:
-                microsecs = c.seconds * 1e6 + c.microseconds
+            #c = datetime.now() - start
+            #microsecs = c.microseconds
+            #if c.seconds > 0:
+            #microsecs = c.seconds * 1e6 + c.microseconds
             #print(microsecs)
-            if microsecs >= self.time:
+            if self.microsecs >= self.time:
+                #print('======')
+                #print(self.microsecs)
+                #print('======')
+                #print('\n')
                 break
 
         possible_acts = np.arange(self.game.getActionSize())
