@@ -78,11 +78,6 @@ class QAgent():
 
 
     def opponent_play(self, board, curPlayer):
-        # possible_acts = np.arange(self.game.getActionSize())
-        # valids = self.game.getValidMoves(board, curPlayer)
-        # valid_acts = possible_acts[valids==1]
-        # action = np.random.choice(valid_acts)
-        #print('Action diko tou: ', action)
         act = np.random.randint(self.game.getActionSize())
         valids = self.game.getValidMoves(board,1)
         while valids[act] !=1:
@@ -96,11 +91,6 @@ class QAgent():
             ret = self.game.getGameEnded(board, 1)
             Q_prime = 0
             self.update(ret, Q_prime, s)
-            # if self.ep % 500 == 0:
-            #     if 0.0 not in self.Q.values():
-            #         self.flag = False
-            #         print('flag', self.flag)
-            #         print('Episode', self.ep)
             if ret == 1:
                 self.wins += 1
             elif ret==-1:
@@ -129,6 +119,7 @@ class QAgent():
         s = init_board.tostring()
         temp = []
         for self.ep in tqdm(range(self.episodes)):
+            
             board = init_board
             # Init the first episode
             if self.ep == 0:
