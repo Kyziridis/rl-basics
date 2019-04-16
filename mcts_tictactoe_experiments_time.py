@@ -11,7 +11,7 @@ import multiprocessing
 
 
 def experiment(m):
-    for c in range(3):
+    for c in range(6):
         rp = RandomPlayer(g).play
         mcts = MCTSAgent(g, iters=100000000, c=c, rollout_iter=1, time=m).play
         arena_rp_hp = Arena.Arena(mcts, rp, g, display=display)
@@ -19,15 +19,14 @@ def experiment(m):
         data.append([m, c, wins, loss, draw])
     return data
 
-print('Start Parallel')
+print('Start Parallel Simulation for TicTacToe: 4, 5, 6')
 global_start = time()
-#microsecs = np.array([500, 5000, 10000, 50000, 100000, 250000, 500000, 750000, 1000000, 1500000, 2000000, 3000000])
-microsecs = np.array([500, 10000, 50000, 250000])
-games = [3,4]
+microsecs = np.array([500, 5000, 10000, 50000, 100000, 250000, 500000, 750000, 1000000, 1500000, 2000000, 3000000])
+games = [3,4,5]
 for i in games:
     global_start = time()
     g = TicTacToeGame(i)
     data = []
-    data = Parallel(n_jobs=4)(delayed(experiment)(m) for m in microsecs)
-    np.save('data_export_'+str(i), data) 
+    data = Parallel(n_jobs=12)(delayed(experiment)(m) for m in microsecs)
+    np.save('tictacttoe_results_'+str(i), data) 
     print('Game: ' + str(i) +' Time: ' + str(time() - global_start))
