@@ -1,53 +1,32 @@
 import Arena
-from MCS import MCSAgent
+from MCS_time import MCSAgent
 from tictactoe.TicTacToeGame import TicTacToeGame, display
 from tictactoe.TicTacToePlayers import *
-
-from joblib import Parallel, delayed
-import multiprocessing
+from tictactoe.TicTacToeLogic import Board
 import numpy as np
 from utils import *
-import time
+from time import time
+from joblib import Parallel, delayed
+import multiprocessing
 
-#
-# global_start = time.time()
-# data = []
-# for game in range(3, 6):
-#     g = TicTacToeGame(game)
-#     for i in iters:
-#         for seed in seeds:
-#             np.random.seed(seed)
-#             rp = RandomPlayer(g).play
-#             mcs = MCSAgent(g, i).play
-#             start = time.time()
-#             arena_rp_op = Arena.Arena(mcs, rp, g, display=display)
-#             wins, losses, draws = arena_rp_op.playGames(100, verbose=False)
-#             time_total = time.time() - start
-#             data.append([game, i, seed, wins, losses, draws, time_total])
-#
-# np.save('data_export_noP', data)
-# print('Time: ' + str(time.time() - global_start))
 
-##################################
-##################################
-
-def experiment(game, iters):
-    g = TicTacToeGame(game)
-    for seed in seeds:
-        np.random.seed(seed)
+def experiment(m):
+    for rep in range(5):
         rp = RandomPlayer(g).play
-        mcs = MCSAgent(g, iters).play
-        start = time.time()
-        arena_rp_op = Arena.Arena(mcs, rp, g, display=display)
-        wins, losses, draws = arena_rp_op.playGames(100, verbose=False)
-        time_total = time.time() - start
-        data.append([game, iters, seed, wins, losses, draws, time_total])
+        mcs = MCSAgent(g, nSims=100000000, time=m).play
+        arena_rp_hp = Arena.Arena(mcs, rp, g, display=display)
+        wins, loss, draw = arena_rp_hp.playGames(100, verbose=False)
+        data.append([m, rep, wins, loss, draw])
     return data
 
-seeds = 1000*(np.arange(5) + 1)
-iters = np.linspace(250, 2000, 8, dtype=np.int16)
-global_start = time.time()
-data = []
-data = Parallel(n_jobs=8)(delayed(experiment)(game, i) for game in range(3,6) for i in iters)
-np.save('mcs_tictactoe_results', data)
-print('Time: ' + str(time.time() - global_start))
+print('Start Parallel')
+global_start = time()
+microsecs = np.array([500, 5000, 10000, 50000, 100000, 250000, 500000, 750000, 1000000, 1500000, 2000000, 3000000])
+games = [3, 4, 5]
+for i in games:
+    global_start = time()
+    g = TicTacToeGame(i)
+    data = []
+    data = Parallel(n_jobs=12)(delayed(experiment)(m) for m in microsecs)
+    np.save('tictactoe_results_' + str(i), data) 
+    print('Game: ' + str(i) +' Time: ' + str(time() - global_start))
