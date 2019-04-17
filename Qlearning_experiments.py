@@ -9,56 +9,36 @@ import numpy as np
 from utils import *
 import time
 
-g = TicTacToeGame(3)
+total_episodes = np.arange(0, 502000, 2000)
+games = [3, 4, 5]
+reps = 5
+n_games = 100
+for game in games:
+    np.random.seed(556)
+    g = TicTacToeGame(game)
 
-np.random.seed(556)
-# all players
-#lrs = [0.001, 0.01, 0.05, 0.1, 1] # Kaname arxiko search, prokeimenou na vroume optimal range. TO DO: Search anamesa se 0.005 mexri 0.1.
-#lrs = [0.005, 0.008, 0.01, 0.02, 0.05, 0.07, 0.1]
-lrs = [0.01]
-#ep_range = np.linspace(0, 40000, 9) + 1
-total_episodes = np.arange(2, 11) * 10000
-wr_episodes = []
-for episodes in total_episodes:
-    ep_range = np.linspace(0, episodes, 9) + 1
-    ep_range[0] = 0
-    ep_range = ep_range.astype(int)
-    ep_range = ep_range[0:8]
-
+    test_wins = []
+    q_agent = QAgent(g, episodes=total_episodes[1], lr=0.1, epsilon=0.2, dc=1, e_min=0.001)
     rp = RandomPlayer(g).play
-    q_agent = QAgent(g, episodes=episodes, lr=0.01, epsilon=0.2, dc=1, e_min=0.001)
     q_agent_play = q_agent.play
-
-    print('========')
-    print('Total Episodes:', episodes)
-    print('========')
-    print('\n')
-    arena_wins = []
-    reps = 5
-    for idx, ep in enumerate(ep_range):
-        print('Starting training for episode:', ep)
+    for idx, ep in enumerate(total_episodes):
+        if ep == total_episodes[-1]:
+            break
+        q_agent.episodes = total_episodes[idx + 1]
+        print('TicTacToe Game:', str(game))
+        print('Training for', ep, 'Episodes...')
         q_agent.train(cur_episode=ep)
-        print('Playing in Arena.')
-        print('\n')
+        print('Training Finished.')
+        print('Playing in Arena...')
         wins = 0
         for i in range(reps):
             arena_rp_op = Arena.Arena(q_agent_play, rp, g, display=display)
-            w, _, _ = arena_rp_op.playGames(100, verbose=False)
+            w, _, _ = arena_rp_op.playGames(n_games, verbose=False)
             wins += w
-        arena_wins.append(wins / (reps * 100))
-    wr_episodes.append(arena_wins)
-#np.save('wr_episodes4.npy', wr_episodes)
-#print(mean_aw)
-    #np.save('total_wins_' + str(lr) + '.npy', q_agent.total_wins)
-    #np.save('total_eps_' + str(lr) + '.npy', q_agent.total_eps)
-    #np.save('arena_wins_' + str(lr) + '.npy', arena_wins)
-#op=OneStepLookaheadConnect4Player(g).play
-
-#start = time.time()
-#arena_rp_op = Arena.Arena(q_agent_play, rp, g, display=display)
-#print(arena_rp_op.playGames(40, verbose=False))
-# a, b, c = arena_rp_op.playGames(100, verbose=False)
-# t = (a,b,c)
-# print(t)
-# end = time.time()
-# print("Time:", str(end - start))
+        test_wins.append(wins / (reps * n_games))
+        print('\n')
+    #print(np.array(q_agent.total_wins) / np.array(q_agent.total_eps))
+    #print(test_wins)
+    np.save('train_wr_tictactoe' + str(g) + '.npy', q_agent.total_wins)
+    np.save('train_ep_tictactoe' + str(g) + '.npy', q_agent.total_eps)
+    np.save('test_wr_tictactoe' + str(g) + '.npy', test_wins)
