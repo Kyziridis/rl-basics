@@ -18,6 +18,7 @@ class QAgent():
         self.episodes = episodes
         self.ep = 0
         self.lr = lr
+        self.ep_arena = np.linspace(0, episodes, 9, dtype=np.int32)[1]
         self.epsilon = []
         self.flag = True
         self.wins = 0
@@ -33,6 +34,8 @@ class QAgent():
                         'epsilon_min:':self.e_,
                         'gamma:':self.gamma,
                         'learning rate:': self.lr}
+        self.total_eps = []
+        self.total_wins = []
 
     def update(self, R, Q_prime, s):
         Q_new = self.Q[s] + self.lr*(R + self.gamma*Q_prime - self.Q[s])
@@ -118,8 +121,16 @@ class QAgent():
         init_board = self.game.getInitBoard()
         s = init_board.tostring()
         temp = []
-        for self.ep in tqdm(range(self.episodes)):
-            
+        for self.ep in range(self.cur_episode, self.episodes + 1):
+            if self.ep == int(np.round(self.episodes * (2/3))):
+                self.e = 0
+            # if self.ep % self.ep_arena == 0:
+            #    print('Episode:', self.ep)
+            #    if self.ep != 0:
+            #        self.total_wins.append(self.wins)
+            #        self.total_eps.append(self.ep)
+            #        return # make him play in arena
+
             board = init_board
             # Init the first episode
             if self.ep == 0:
@@ -137,7 +148,7 @@ class QAgent():
             self.start = time()
             try:
                 while self.game.getGameEnded(board, 1) == 0:
-                    
+
                     # Choose action with e_greedy policy
                     action = self.e_greedy(board, actions_q)
 
@@ -164,27 +175,28 @@ class QAgent():
             except END:
                 pass
 
-
-    def train(self):
+    def train(self, cur_episode=0):
+        self.cur_episode = cur_episode
         general_time = time()
-        print('Train Q-Agent for %s episodes >_' %self.episodes)
+        #print('Train Q-Agent for %s episodes >_' %self.episodes)
         self.simulate()
+        #print('Training finished.')
         #print('Q:\n' + str(self.Q))
-        print('Wins: %s | Loss: %s | Draw: %s |' %(self.wins, self.loss, self.draw)\
-         + ' Total Training Time: ' + str(round(time()-general_time)) + ' secs'  )
-        print('\nConfiguration: ', self.config)
-        plt.figure()
-        plt.plot(self.epsilon)
-        plt.xlabel('Iterations')
-        plt.ylabel('Epsilon')
-        plt.title('e-greedy curve')
-        plt.show()
+        #print('Wins: %s | Loss: %s | Draw: %s |' %(self.wins, self.loss, self.draw)\
+        # + ' Total Training Time: ' + str(round(time()-general_time)) + ' secs'  )
+        #print('\nConfiguration: ', self.config)
+        #plt.figure()
+        #plt.plot(self.epsilon)
+        #plt.xlabel('Iterations')
+        #plt.ylabel('Epsilon')
+        #plt.title('e-greedy curve')
+        #plt.show()
 
-        with open('Q_table.pickle', 'wb') as handle:
-            pickle.dump(self.Q, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        #with open('Q_table.pickle', 'wb') as handle:
+        #    pickle.dump(self.Q, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-        print('\nTraining finished and Qtable is exported')
-        print('')
+        #print('\nTraining finished and Qtable is exported')
+        #print('')
 
 
     def play(self, board):
