@@ -16,7 +16,7 @@ def experiment(m):
             pl = RandomPlayer(g).play
         else:
             pl = OneStepLookaheadConnect4Player(g, verbose=False).play
-        mcts = MCTSAgent(g, iters=100000000, c=c_best, rollout_iters=1, time=m).play
+        mcts = MCTSAgent(g, iters=100000000, c=c_best, rollout_iter=1, time=m).play
         arena_rp_hp = Arena.Arena(mcts, pl, g, display=display)
         wins, loss, draw = arena_rp_hp.playGames(100, verbose=False)
         data.append([m, rep, wins, loss, draw])
