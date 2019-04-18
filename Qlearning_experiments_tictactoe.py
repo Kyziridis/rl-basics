@@ -52,7 +52,7 @@ def experiment(game):
                 print('Playing in Arena...')
                 wins = 0
                 temp = []
-                for i in range(reps):
+                for repet in range(reps):
                     arena_rp_op = Arena.Arena(q_agent_play, rp, g, display=display)
                     w, _, _ = arena_rp_op.playGames(n_games, verbose=False)
                     temp.append(w / n_games) 

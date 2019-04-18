@@ -55,7 +55,7 @@ def experiment(game):
                 print('Playing in Arena...')
                 wins = 0
                 temp = []
-                for i in range(reps):
+                for repet in range(reps):
                     arena_rp_op = Arena.Arena(q_agent_play, op, g, display=display)
                     w, _, _ = arena_rp_op.playGames(n_games, verbose=False)
                     temp.append(w / n_games) 
@@ -63,9 +63,9 @@ def experiment(game):
                 test_wr_list.append(temp)
                 test_wr.append(wins / (reps * n_games))
                 print('\n')
-            np.save('train_wr_tictactoe_' + str(game) + '_' + str(lr) + '_' + str(i) + 'op', q_agent.total_wins)
-            np.save('train_ep_tictactoe_' + str(game) + '_' + str(lr) + '_' + str(i) + 'op', q_agent.total_eps)
-            np.save('test_wr_tictactoe_' + str(game) + '_' + str(lr) + '_' + str(i) + 'op', test_wr)
+            np.save('train_wr_connect4_' + str(game) + '_' + str(lr) + '_' + str(i) + '_op', q_agent.total_wins)
+            np.save('train_ep_connect4_' + str(game) + '_' + str(lr) + '_' + str(i) + '_op', q_agent.total_eps)
+            np.save('test_wr_connect4_' + str(game) + '_' + str(lr) + '_' + str(i) + '_op', test_wr)
             np.save('test_wr_list_' + str(game) + '_' + str(lr) + '_' + str(i), test_wr_list)
             print('\n')
 
