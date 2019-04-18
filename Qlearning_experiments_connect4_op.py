@@ -9,7 +9,7 @@ import multiprocessing
 
 import numpy as np
 from utils import *
-import time
+from time import time
 
 def experiment(game):
     np.random.seed(556)
@@ -27,7 +27,6 @@ def experiment(game):
     ep_range = np.arange(0, total_episodes + ep_step, ep_step) + 1
     ep_range[0] = 0
     ep_range = ep_range.astype(int)
-    ep_range = ep_range[0:-1] 
     for lr in lrs:
         for i in epsilon_config:
             print('Config: Game', game, 'lr', lr, 'epsilon', i)
@@ -41,6 +40,7 @@ def experiment(game):
                 q_agent = QAgent(g, episodes=total_episodes, lr=lr, epsilon=1, dc=0.99, e_min=0.001)
                 op = OneStepLookaheadConnect4Player(g, verbose=False).play
                 q_agent_play = q_agent.play
+            start = time()
             for idx, episode in enumerate(ep_range):
                 if episode == ep_range[-1]:
                     break
@@ -63,10 +63,13 @@ def experiment(game):
                 test_wr_list.append(temp)
                 test_wr.append(wins / (reps * n_games))
                 print('\n')
-            np.save('train_wr_connect4_' + str(game) + '_' + str(lr) + '_' + str(i) + '_op', q_agent.total_wins)
-            np.save('train_ep_connect4_' + str(game) + '_' + str(lr) + '_' + str(i) + '_op', q_agent.total_eps)
-            np.save('test_wr_connect4_' + str(game) + '_' + str(lr) + '_' + str(i) + '_op', test_wr)
-            np.save('test_wr_list_' + str(game) + '_' + str(lr) + '_' + str(i), test_wr_list)
+            end = time()
+            training_time = np.array([end - start])
+            np.save('Qlearning_results/train_wr_connect4_' + str(game) + '_' + str(lr) + '_' + str(i) + '_op', q_agent.total_wins)
+            np.save('Qlearning_results/train_ep_connect4_' + str(game) + '_' + str(lr) + '_' + str(i) + '_op', q_agent.total_eps)
+            np.save('Qlearning_results/test_wr_connect4_' + str(game) + '_' + str(lr) + '_' + str(i) + '_op', test_wr)
+            np.save('Qlearning_results/test_wr_list_connect4_' + str(game) + '_' + str(lr) + '_' + str(i) + '_op', test_wr_list)
+            np.save('Qlearning_results/training_time_' + str(game) + '_' + str(lr) + '_' + str(i) + '_op', training_time)
             print('\n')
 
 n_episodes = [120000, 160000, 200000]
