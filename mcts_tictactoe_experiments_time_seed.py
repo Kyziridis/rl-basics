@@ -1,5 +1,5 @@
 import Arena
-from MCS_time import MCSAgent
+from MCTS_time import MCTSAgent
 from tictactoe.TicTacToeGame import TicTacToeGame, display
 from tictactoe.TicTacToePlayers import *
 from tictactoe.TicTacToeLogic import Board
@@ -13,7 +13,7 @@ import multiprocessing
 def experiment(m):
     for rep in range(5):
         rp = RandomPlayer(g).play
-        mcs = MCSAgent(g, nSims=100000000, time=m).play
+        mcts = MCTSAgent(g, iters=100000000,c=c_best, rollout_iter=1, time=m).play
         arena_rp_hp = Arena.Arena(mcs, rp, g, display=display)
         wins, loss, draw = arena_rp_hp.playGames(100, verbose=False)
         data.append([m, rep, wins, loss, draw])
@@ -21,12 +21,14 @@ def experiment(m):
 
 print('Start Parallel')
 global_start = time()
-microsecs = np.array([500, 5000, 10000, 50000, 100000, 250000, 500000, 750000, 1000000, 1500000, 2000000, 3000000])
+microsecs = np.array([5000, 10000, 50000, 100000, 250000, 500000, 750000, 1000000, 1500000, 2000000, 3000000])
 games = [3, 4, 5]
-for i in games:
+c = [2, 5 ,1]
+for i,cs in zip(games,c):
+    c_best = cs
     global_start = time()
     g = TicTacToeGame(i)
     data = []
-    data = Parallel(n_jobs=12)(delayed(experiment)(m) for m in microsecs)
-    np.save('tictactoe_results_' + str(i), data) 
+    data = Parallel(n_jobs=11)(delayed(experiment)(m) for m in microsecs)
+    np.save('mcts_best_tictactoe_results_' + str(i), data) 
     print('Game: ' + str(i) +' Time: ' + str(time() - global_start))

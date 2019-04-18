@@ -21,12 +21,12 @@ def experiment(m):
 
 print('Start Parallel')
 global_start = time()
-microsecs = np.array([500, 5000, 10000, 50000, 100000, 250000, 500000, 750000, 1000000, 1500000, 2000000, 3000000])
+microsecs = np.array([5000, 10000, 50000, 100000, 250000, 500000, 750000, 1000000, 1500000, 2000000, 3000000])
 games = [3, 4, 5]
 for i in games:
     global_start = time()
     g = TicTacToeGame(i)
     data = []
-    data = Parallel(n_jobs=12)(delayed(experiment)(m) for m in microsecs)
+    data = Parallel(n_jobs=11)(delayed(experiment)(m) for m in microsecs)
     np.save('tictactoe_results_' + str(i), data) 
     print('Game: ' + str(i) +' Time: ' + str(time() - global_start))

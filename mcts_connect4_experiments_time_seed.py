@@ -1,5 +1,5 @@
 import Arena
-from MCS_time import MCSAgent
+from MCTS_time import MCTSAgent
 from connect4.Connect4Game import Connect4Game, display
 from connect4.Connect4Players import *
 from connect4.Connect4Logic import Board
@@ -16,8 +16,8 @@ def experiment(m):
             pl = RandomPlayer(g).play
         else:
             pl = OneStepLookaheadConnect4Player(g, verbose=False).play
-        mcs = MCSAgent(g, nSims=100000000, time=m).play
-        arena_rp_hp = Arena.Arena(mcs, pl, g, display=display)
+        mcts = MCTSAgent(g, iters=100000000, c=c_best, rollout_iters=1, time=m).play
+        arena_rp_hp = Arena.Arena(mcts, pl, g, display=display)
         wins, loss, draw = arena_rp_hp.playGames(100, verbose=False)
         data.append([m, rep, wins, loss, draw])
     return data
@@ -28,7 +28,12 @@ microsecs = np.array([10000, 50000, 100000, 250000, 500000, 750000, 1000000, 150
 games = [(4, 5, 3), (5, 6, 4), (6, 7, 4)]
 players = ['rp', 'op']
 for player in players:
-    for i in games:
+    if player == 'rp':
+        cs = [1,4,3]
+    else:
+        cs = [5,2,5]
+    for i,c in zip(games,cs):
+        c_best = c
         height = i[0]
         width = i[1]
         win_streak = i[2]
@@ -36,5 +41,5 @@ for player in players:
         g = Connect4Game(height, width, win_streak)
         data = []
         data = Parallel(n_jobs=10)(delayed(experiment)(m) for m in microsecs)
-        np.save('connect4_results_' + player + '_' + str(height) + str(width) + str(win_streak), data) 
+        np.save('mcts_best_connect4_results_' + player + '_' + str(height) + str(width) + str(win_streak), data) 
         print('Game: ' + str(i) + ' against ' + player + ', Time: ' + str(time() - global_start))
