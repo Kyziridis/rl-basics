@@ -16,9 +16,8 @@ class QAgent():
         self.Q = {}
         self.game = game
         self.episodes = episodes
-        self.ep = 0
+        #self.ep = 0
         self.lr = lr
-        self.ep_arena = np.linspace(0, episodes, 9, dtype=np.int32)[1]
         self.epsilon = []
         self.flag = True
         self.wins = 0
@@ -122,14 +121,15 @@ class QAgent():
         s = init_board.tostring()
         temp = []
         for self.ep in range(self.cur_episode, self.episodes + 1):
-            if self.ep == int(np.round(self.episodes * (2/3))):
+            if self.ep == int(np.round(self.episodes * (2/3))) and self.dc == 1:
                 self.e = 0
-            # if self.ep % self.ep_arena == 0:
-            #    print('Episode:', self.ep)
-            #    if self.ep != 0:
-            #        self.total_wins.append(self.wins)
-            #        self.total_eps.append(self.ep)
-            #        return # make him play in arena
+            #if self.ep == self.episodes
+            if self.ep != 0:
+                if self.ep % 2000 == 0:
+               #print('Episode:', self.ep)
+                    self.total_wins.append(self.wins)
+                    self.total_eps.append(self.ep)
+                    return # make him play in arena
 
             board = init_board
             # Init the first episode
