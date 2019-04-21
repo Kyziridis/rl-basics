@@ -1,5 +1,5 @@
 import Arena
-from Qlearning import QAgent
+from Qlearning_experiments import QAgent
 from connect4.Connect4Game import Connect4Game, display
 from connect4.Connect4Players import *
 #from tictactoe.TicTacToeGame import TicTacToeGame, display
@@ -39,14 +39,18 @@ def experiment(game):
         for i in epsilon_config:
             print('Config: Game', game, 'lr', lr, 'epsilon', i)
             test_wr_list = []
+            test_wr_list_op = []
             test_wr = []
+            test_wr_op = []
             if i == 'f':
                 q_agent = QAgent(g, episodes=total_episodes, lr=lr, epsilon=0.2, dc=1, e_min=0.001, ep_arena=ep_step)
                 rp = RandomPlayer(g).play
+                op = OneStepLookaheadConnect4Player(g, verbose=False).play
                 q_agent_play = q_agent.play
             else:
                 q_agent = QAgent(g, episodes=total_episodes, lr=lr, epsilon=1, dc=0.99, e_min=0.001, ep_arena=ep_step)
                 rp = RandomPlayer(g).play
+                op = OneStepLookaheadConnect4Player(g, verbose=False).play
                 q_agent_play = q_agent.play
             start = time()
             for idx, episode in enumerate(ep_range):
@@ -71,6 +75,18 @@ def experiment(game):
                 test_wr_list.append(temp)
                 test_wr.append(wins / (reps * n_games))
                 print('\n')
+                
+                wins_op = 0
+                temp = []
+                for repet in range(reps):
+                    arena_rp_op = Arena.Arena(q_agent_play, op, g, display=display)
+                    w_op, _, _ = arena_rp_op.playGames(n_games, verbose=False)
+                    temp.append(w_op / n_games) 
+                    wins_op += w_op
+                test_wr_list_op.append(temp)
+                test_wr_op.append(wins_op / (reps * n_games))
+                print('\n')
+
             end = time()
             training_time = np.array([end - start])
             np.save('Qlearning_results2/train_wr_connect4_' + str(game) + '_' + str(lr) + '_' + str(i) + '_rp', q_agent.total_wins)
@@ -78,6 +94,9 @@ def experiment(game):
             np.save('Qlearning_results2/test_wr_connect4_' + str(game) + '_' + str(lr) + '_' + str(i) + '_rp', test_wr)
             np.save('Qlearning_results2/test_wr_list_connect4_' + str(game) + '_' + str(lr) + '_' + str(i) + '_rp', test_wr_list)
             np.save('Qlearning_results2/training_time_' + str(game) + '_' + str(lr) + '_' + str(i) + '_rp', training_time)
+            
+            np.save('Qlearning_results2/test_wr_connect4_' + str(game) + '_' + str(lr) + '_' + str(i) + '_op', test_wr_op)
+            np.save('Qlearning_results2/test_wr_list_connect4_' + str(game) + '_' + str(lr) + '_' + str(i) + '_op', test_wr_list_op)
             print('\n')
 
 n_episodes = [300000, 500000, 700000]
