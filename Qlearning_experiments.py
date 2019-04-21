@@ -1,67 +1,223 @@
-import Arena
-from Qlearning import QAgent
-#from connect4.Connect4Game import Connect4Game, display
-#from connect4.Connect4Players import *
-from tictactoe.TicTacToeGame import TicTacToeGame, display
-from tictactoe.TicTacToePlayers import *
-
+'''
+write a simple Q-learning player
+'''
 import numpy as np
-from utils import *
-import time
+import sys
+from time import time
+import matplotlib.pyplot as plt
+import pickle
+from tqdm import tqdm
 
-def experiment(game):
-    np.random.seed(556)
-    g = TicTacToeGame(game)
-    if game == 3:
-        total_episodes = n_episodes[0]
-    elif game == 4:
-        total_episodes = n_episodes[1]
-    else:
-        total_episodes = n_episodes[2]
-    ep_step = 2000
-    ep_range = np.arange(0, total_episodes + ep_step, ep_step) + 1
-    ep_range[0] = 0
-    ep_range = ep_range.astype(int)
-    ep_range = ep_range[0:-1]
-    for lr in lrs:
-        for i in epsilon_config:
-            test_wins = []
-            if i == 'f':
-                q_agent = QAgent(g, episodes=total_episodes, lr=lr, epsilon=0.2, dc=1, e_min=0.001)
-                rp = RandomPlayer(g).play
-                q_agent_play = q_agent.play
+class END(Exception): pass
+# alalalala
+
+class QAgent():
+    def __init__(self, game, episodes, lr, epsilon, dc, e_min, ep_arena=None):
+        self.Q = {}
+        self.game = game
+        self.episodes = episodes
+        #self.ep = 0
+        self.lr = lr
+        self.epsilon = []
+        self.flag = True
+        self.wins = 0
+        self.draw = 0
+        self.loss = 0
+        self.ep_arena = ep_arena
+        self.gamma = 0.99
+        self.tau = 0.01
+        self.e = epsilon
+        self.dc = dc
+        self.e_ = e_min
+        self.config = {'epsilon:':self.e,
+                        'discount_e:':self.dc,
+                        'epsilon_min:':self.e_,
+                        'gamma:':self.gamma,
+                        'learning rate:': self.lr}
+        self.total_eps = []
+        self.total_wins = []
+
+    def update(self, R, Q_prime, s):
+        Q_new = self.Q[s] + self.lr*(R + self.gamma*Q_prime - self.Q[s])
+        self.Q[s] = Q_new
+
+    def e_greedy(self, board, actions_q):
+        if np.random.rand() <= self.e :
+            valid_acts = np.where(actions_q!=-1e+9)[0]
+            action = np.random.choice(valid_acts)
+            self.epsilon.append(self.e)
+            if self.e > self.e_:
+                self.e *= self.dc
+            #print('Epsilon Action: ', action)
+            return action
+        #print('Actions_q: '+ str(actions_q))
+        max_ = max(actions_q)
+        max_indx = np.where(actions_q == max_)[0]
+        if len(max_indx) != 1:
+            action = np.random.choice(max_indx)
+            return action
+        action = np.argmax(actions_q)
+        #print('Policy Action: ', action)
+        return action
+
+    def init_q(self, board):
+        temp = []
+        possible_acts = np.arange(self.game.getActionSize())
+        valids = self.game.getValidMoves(board, 1)
+        valid_acts = possible_acts[valids==1]
+        neg_acts = possible_acts[valids==0]
+        actions_q = np.zeros_like(possible_acts, dtype=np.float32)
+        actions_q[neg_acts] = -1e+9
+        for action in valid_acts:
+            next_s, _ = self.game.getNextState(board, 1, action)
+            #s_next = str(next_s.flatten())
+            s_next = next_s.tostring()
+            temp.append(s_next)
+            if s_next not in self.Q:
+                self.Q[s_next] = 0.
+            #print('Q[new_state]: ', self.Q[s_next])
+            actions_q[action] = self.Q[s_next]
+        return temp, actions_q
+
+
+    def opponent_play(self, board, curPlayer):
+        act = np.random.randint(self.game.getActionSize())
+        valids = self.game.getValidMoves(board,1)
+        while valids[act] !=1:
+            act = np.random.randint(self.game.getActionSize())
+        board, curPlayer = self.game.getNextState(board, curPlayer, act)
+        return board, curPlayer
+
+
+    def check_terminal(self, board, s):
+        if self.game.getGameEnded(board, 1) != 0:
+            ret = self.game.getGameEnded(board, 1)
+            Q_prime = 0
+            self.update(ret, Q_prime, s)
+            if ret == 1:
+                self.wins += 1
+            elif ret==-1:
+                self.loss += 1
             else:
-                q_agent = QAgent(g, episodes=total_episodes, lr=lr, epsilon=1, dc=0.99, e_min=0.001)
-                rp = RandomPlayer(g).play
-                q_agent_play = q_agent.play
-            for idx, episode in enumerate(ep_range):
-                if episode == ep_range[-1]:
-                    break
-                if episode == 0:
-                    print('Training for Episodes ', 0, ' to ', ep_range[idx + 1] - 1, '...', sep='')
-                elif episode == ep_range[-2]:
-                    print('Training for Episodes ', episode - 1, ' to ', total_episodes, '...', sep='')
-                else:
-                    print('Training for Episodes ', episode - 1, ' to ', ep_range[idx + 1] - 1, '...', sep='')
-                q_agent.train(cur_episode=episode)
-                print('Training Finished.')
-                print('Playing in Arena...')
-                wins = 0
-                for i in range(reps):
-                    arena_rp_op = Arena.Arena(q_agent_play, rp, g, display=display)
-                    w, _, _ = arena_rp_op.playGames(n_games, verbose=False)
-                    wins += w
-                test_wins.append(wins / (reps * n_games))
-                print('\n')
-            np.save('train_wr_tictactoe_' + str(game) + '_' + str(lr) + '_' + str(i), q_agent.total_wins)
-            np.save('train_ep_tictactoe_' + str(game) + '_' + str(lr) + '_' + str(i), q_agent.total_eps)
-            np.save('test_wr_tictactoe_' + str(game) + '_' + str(lr) + '_' + str(i), test_wins)
-            print('\n')
+                self.draw += 1
+            end = time()
+            #print("\nEpisode: %s  |  Reward: %s " %(self.ep, ret))
+            # self.ep += 1
+            raise END
+        else:
+            pass
 
-n_episodes = [120000, 160000, 200000]
-reps = 5
-n_games = 100
-lrs = [0.01, 0.05, 0.1]
-games = [3, 4, 5]
-epsilon_config = ['f', 'd']
-#for game in games:
+
+    def max_q(self, temp):
+        qs = []
+        for state in temp:
+            qs.append(self.Q[state])
+        Q_prime = max(qs)
+        ret = 0
+        return ret, Q_prime
+
+
+    def simulate(self):
+        init_board = self.game.getInitBoard()
+        s = init_board.tostring()
+        temp = []
+        for self.ep in range(self.cur_episode, self.episodes + 1):
+            if self.ep == int(np.round(self.episodes * (2/3))) and self.dc == 1:
+                self.e = 0
+            #if self.ep == self.episodes
+            if self.ep != 0:
+                if self.ep % self.ep_arena == 0:
+               #print('Episode:', self.ep)
+                    self.total_wins.append(self.wins)
+                    self.total_eps.append(self.ep)
+                    return # make him play in arena
+
+            board = init_board
+            # Init the first episode
+            if self.ep == 0:
+                self.Q[s] = 0.
+
+            # Check the players
+            if self.ep % 2 == 0:
+                curPlayer = 1
+            else:
+                curPlayer = -1
+                board, curPlayer = self.opponent_play(board, curPlayer)
+
+            # Expand
+            temp, actions_q = self.init_q(board)
+            self.start = time()
+            try:
+                while self.game.getGameEnded(board, 1) == 0:
+
+                    # Choose action with e_greedy policy
+                    action = self.e_greedy(board, actions_q)
+
+                    # My player exerts action!
+                    board, curPlayer = self.game.getNextState(board, curPlayer, action)
+                    s = board.tostring()
+                    # check if my action resulted in terminal state
+                    # If board == Terminal then update and break
+                    self.check_terminal(board, s)
+
+                    # Opponent exerts random action!
+                    board, curPlayer = self.opponent_play(board, curPlayer)
+                    # check if opponent's action resulted in terminal state
+                    # If board == Terminal then update and break
+                    self.check_terminal(board, s)
+
+                    # Expand
+                    temp, actions_q = self.init_q(board)
+                    # Calculate Max_Q for Q_prime
+                    ret, Q_prime = self.max_q(temp)
+                    # Update
+                    self.update(ret, Q_prime, s)
+
+            except END:
+                pass
+
+    def train(self, cur_episode=0):
+        self.cur_episode = cur_episode
+        general_time = time()
+        #print('Train Q-Agent for %s episodes >_' %self.episodes)
+        self.simulate()
+        #print('Training finished.')
+        #print('Q:\n' + str(self.Q))
+        #print('Wins: %s | Loss: %s | Draw: %s |' %(self.wins, self.loss, self.draw)\
+        # + ' Total Training Time: ' + str(round(time()-general_time)) + ' secs'  )
+        #print('\nConfiguration: ', self.config)
+        #plt.figure()
+        #plt.plot(self.epsilon)
+        #plt.xlabel('Iterations')
+        #plt.ylabel('Epsilon')
+        #plt.title('e-greedy curve')
+        #plt.show()
+
+        #with open('Q_table.pickle', 'wb') as handle:
+        #    pickle.dump(self.Q, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+        #print('\nTraining finished and Qtable is exported')
+        #print('')
+
+
+    def play(self, board):
+        possible_acts = np.arange(self.game.getActionSize())
+        valids = self.game.getValidMoves(board, 1)
+        valid_acts = possible_acts[valids==1]
+        neg_acts = possible_acts[valids==0]
+        actions_q = np.zeros_like(possible_acts, dtype=np.float32)
+        actions_q[neg_acts] = -1e+9
+
+        for action in valid_acts:
+            next_s, _ = self.game.getNextState(board, 1, action)
+            s_next = next_s.tostring()
+            if s_next not in self.Q: self.Q[s_next] = 0.
+            actions_q[action] = self.Q[s_next]
+
+        max_ = max(actions_q)
+        max_indx = np.where(actions_q == max_)[0]
+        if len(max_indx) != 1:
+            action = np.random.choice(max_indx)
+            return action
+        final_action = np.argmax(actions_q)
+        return final_action
