@@ -121,6 +121,7 @@ class QAgent():
         init_board = self.game.getInitBoard()
         s = init_board.tostring()
         temp = []
+        self.wins = 0
         for self.ep in range(self.cur_episode, self.episodes + 1):
             if self.ep == int(np.round(self.episodes * (2/3))) and self.dc == 1:
                 self.e = 0
@@ -129,7 +130,8 @@ class QAgent():
                 if self.ep % self.ep_arena == 0:
                #print('Episode:', self.ep)
                     self.total_wins.append(self.wins)
-                    self.total_eps.append(self.ep)
+                    #self.total_eps.append(self.ep)
+                    self.total_eps.append(self.ep_arena)
                     return # make him play in arena
 
             board = init_board

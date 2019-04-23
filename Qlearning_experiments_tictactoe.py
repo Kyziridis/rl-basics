@@ -70,11 +70,11 @@ def experiment(game):
                 print('\n')
             end = time()
             training_time = np.array([end - start])        
-            np.save('Qlearning_results2/train_wr_tictactoe_' + str(game) + '_' + str(lr) + '_' + str(i), q_agent.total_wins)
-            np.save('Qlearning_results2/train_ep_tictactoe_' + str(game) + '_' + str(lr) + '_' + str(i), q_agent.total_eps)
-            np.save('Qlearning_results2/test_wr_tictactoe_' + str(game) + '_' + str(lr) + '_' + str(i), test_wr)
-            np.save('Qlearning_results2/test_wr_list_tictactoe_' + str(game) + '_' + str(lr) + '_' + str(i), test_wr_list)
-            np.save('Qlearning_results2/training_time_' + str(game) + '_' + str(lr) + '_' + str(i), training_time)
+            np.save('Qlearning_results3/train_wr_tictactoe_' + str(game) + '_' + str(lr) + '_' + str(i), q_agent.total_wins)
+            np.save('Qlearning_results3/train_ep_tictactoe_' + str(game) + '_' + str(lr) + '_' + str(i), q_agent.total_eps)
+            np.save('Qlearning_results3/test_wr_tictactoe_' + str(game) + '_' + str(lr) + '_' + str(i), test_wr)
+            np.save('Qlearning_results3/test_wr_list_tictactoe_' + str(game) + '_' + str(lr) + '_' + str(i), test_wr_list)
+            np.save('Qlearning_results3/training_time_' + str(game) + '_' + str(lr) + '_' + str(i), training_time)
             print('\n')
 
 n_episodes = [300000, 500000, 700000]

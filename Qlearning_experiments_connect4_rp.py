@@ -89,14 +89,14 @@ def experiment(game):
 
             end = time()
             training_time = np.array([end - start])
-            np.save('Qlearning_results2/train_wr_connect4_' + str(game) + '_' + str(lr) + '_' + str(i) + '_rp', q_agent.total_wins)
-            np.save('Qlearning_results2/train_ep_connect4_' + str(game) + '_' + str(lr) + '_' + str(i) + '_rp', q_agent.total_eps)
-            np.save('Qlearning_results2/test_wr_connect4_' + str(game) + '_' + str(lr) + '_' + str(i) + '_rp', test_wr)
-            np.save('Qlearning_results2/test_wr_list_connect4_' + str(game) + '_' + str(lr) + '_' + str(i) + '_rp', test_wr_list)
-            np.save('Qlearning_results2/training_time_' + str(game) + '_' + str(lr) + '_' + str(i) + '_rp', training_time)
+            np.save('Qlearning_results3/train_wr_connect4_' + str(game) + '_' + str(lr) + '_' + str(i) + '_rp', q_agent.total_wins)
+            np.save('Qlearning_results3/train_ep_connect4_' + str(game) + '_' + str(lr) + '_' + str(i) + '_rp', q_agent.total_eps)
+            np.save('Qlearning_results3/test_wr_connect4_' + str(game) + '_' + str(lr) + '_' + str(i) + '_rp', test_wr)
+            np.save('Qlearning_results3/test_wr_list_connect4_' + str(game) + '_' + str(lr) + '_' + str(i) + '_rp', test_wr_list)
+            np.save('Qlearning_results3/training_time_' + str(game) + '_' + str(lr) + '_' + str(i) + '_rp', training_time)
             
-            np.save('Qlearning_results2/test_wr_connect4_' + str(game) + '_' + str(lr) + '_' + str(i) + '_op', test_wr_op)
-            np.save('Qlearning_results2/test_wr_list_connect4_' + str(game) + '_' + str(lr) + '_' + str(i) + '_op', test_wr_list_op)
+            np.save('Qlearning_results3/test_wr_connect4_' + str(game) + '_' + str(lr) + '_' + str(i) + '_op', test_wr_op)
+            np.save('Qlearning_results3/test_wr_list_connect4_' + str(game) + '_' + str(lr) + '_' + str(i) + '_op', test_wr_list_op)
             print('\n')
 
 n_episodes = [300000, 500000, 700000]
