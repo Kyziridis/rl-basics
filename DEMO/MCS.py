@@ -2,8 +2,8 @@ import numpy as np
 
 '''
 write MCS player as a small exercise before you implement the MCTS
-This script is the MCS agent class. It takes a state from the Arena and 
-it plays many simulations in order to select the optimal action.
+The script is only for the Demo and it is not include time constrains.
+This script is used ONLY in the Demo.py and it is NOT used in any experimentation!
 '''
 
 class MCSAgent():

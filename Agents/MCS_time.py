@@ -2,9 +2,12 @@ import numpy as np
 from time import time
 from datetime import datetime
 
+
 '''
-write MCS player as a small exercise before you implement the MCTS
-'''
+This script is the MCS agent class. It takes a state from the Arena and 
+it plays many simulations in order to select the optimal action.
+It contains response time contrains and it is used for the experiments.
+'''     
 
 class MCSAgent():
     def __init__(self, game, nSims, time):

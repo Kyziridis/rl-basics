@@ -1,5 +1,8 @@
 '''
-write a simple Q-learning player
+This is Q-Agent script for experimentation. We used this script
+in our experiments. Do not use this in pit.py, it is only used 
+in the experiments.
+For pit.py use the normal Qlearning.py .
 '''
 import numpy as np
 import sys

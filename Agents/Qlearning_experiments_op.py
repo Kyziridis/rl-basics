@@ -1,5 +1,8 @@
 '''
-write a simple Q-learning player
+This is Q-Agent script trained against OneStepLookahead.
+We used this script for the experiments. It is not written
+to be used in pit.py .
+For pit.py use the normal Qlearning.py .
 '''
 import numpy as np
 import sys

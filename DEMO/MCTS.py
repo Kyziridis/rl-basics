@@ -1,7 +1,8 @@
 '''
 write MCTS player by yourself
-This is the MCTS agent script. It takes a state from the arena and it builds a tree.
-It returns the best action according to the action-values of the tree.
+This is just for the demo, it does not contain the time constrain.
+This script is NOT used in the experiments.
+This script is used ONLY for the Demo.py
 '''
 import numpy as np
 import sys
