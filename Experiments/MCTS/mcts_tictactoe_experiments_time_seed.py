@@ -1,5 +1,5 @@
 import Arena
-from MCTS_time import MCTSAgent
+from Agents.MCTS_time import MCTSAgent
 from tictactoe.TicTacToeGame import TicTacToeGame, display
 from tictactoe.TicTacToePlayers import *
 from tictactoe.TicTacToeLogic import Board

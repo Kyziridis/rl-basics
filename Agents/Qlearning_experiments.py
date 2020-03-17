@@ -9,14 +9,12 @@ import pickle
 from tqdm import tqdm
 
 class END(Exception): pass
-# alalalala
 
 class QAgent():
     def __init__(self, game, episodes, lr, epsilon, dc, e_min, ep_arena=None):
         self.Q = {}
         self.game = game
         self.episodes = episodes
-        #self.ep = 0
         self.lr = lr
         self.epsilon = []
         self.flag = True
@@ -48,16 +46,13 @@ class QAgent():
             self.epsilon.append(self.e)
             if self.e > self.e_:
                 self.e *= self.dc
-            #print('Epsilon Action: ', action)
             return action
-        #print('Actions_q: '+ str(actions_q))
         max_ = max(actions_q)
         max_indx = np.where(actions_q == max_)[0]
         if len(max_indx) != 1:
             action = np.random.choice(max_indx)
             return action
         action = np.argmax(actions_q)
-        #print('Policy Action: ', action)
         return action
 
     def init_q(self, board):
@@ -70,12 +65,10 @@ class QAgent():
         actions_q[neg_acts] = -1e+9
         for action in valid_acts:
             next_s, _ = self.game.getNextState(board, 1, action)
-            #s_next = str(next_s.flatten())
             s_next = next_s.tostring()
             temp.append(s_next)
             if s_next not in self.Q:
                 self.Q[s_next] = 0.
-            #print('Q[new_state]: ', self.Q[s_next])
             actions_q[action] = self.Q[s_next]
         return temp, actions_q
 
@@ -101,8 +94,6 @@ class QAgent():
             else:
                 self.draw += 1
             end = time()
-            #print("\nEpisode: %s  |  Reward: %s " %(self.ep, ret))
-            # self.ep += 1
             raise END
         else:
             pass
@@ -122,15 +113,12 @@ class QAgent():
         s = init_board.tostring()
         temp = []
         self.wins = 0
-        for self.ep in range(self.cur_episode, self.episodes + 1):
+        for self.ep in tqdm(range(self.cur_episode, self.episodes + 1)):
             if self.ep == int(np.round(self.episodes * (2/3))) and self.dc == 1:
                 self.e = 0
-            #if self.ep == self.episodes
             if self.ep != 0:
                 if self.ep % self.ep_arena == 0:
-               #print('Episode:', self.ep)
                     self.total_wins.append(self.wins)
-                    #self.total_eps.append(self.ep)
                     self.total_eps.append(self.ep_arena)
                     return # make him play in arena
 
@@ -181,25 +169,7 @@ class QAgent():
     def train(self, cur_episode=0):
         self.cur_episode = cur_episode
         general_time = time()
-        #print('Train Q-Agent for %s episodes >_' %self.episodes)
         self.simulate()
-        #print('Training finished.')
-        #print('Q:\n' + str(self.Q))
-        #print('Wins: %s | Loss: %s | Draw: %s |' %(self.wins, self.loss, self.draw)\
-        # + ' Total Training Time: ' + str(round(time()-general_time)) + ' secs'  )
-        #print('\nConfiguration: ', self.config)
-        #plt.figure()
-        #plt.plot(self.epsilon)
-        #plt.xlabel('Iterations')
-        #plt.ylabel('Epsilon')
-        #plt.title('e-greedy curve')
-        #plt.show()
-
-        #with open('Q_table.pickle', 'wb') as handle:
-        #    pickle.dump(self.Q, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-        #print('\nTraining finished and Qtable is exported')
-        #print('')
 
 
     def play(self, board):

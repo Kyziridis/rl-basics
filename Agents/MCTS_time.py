@@ -17,7 +17,7 @@ class MCTSAgent():
         self.time = time
 
     def UCB(self, q, N, n, epsilon=1e-8):
-        return q + self.c* np.sqrt(np.log(N + epsilon) / (n + epsilon))
+        return q + self.c* np.sqrt(np.clip(np.log(N + epsilon), a_min=0, a_max=np.Inf) / (n + epsilon))
 
     def rollout(self, board, curPlayer):
         Q = []
@@ -27,26 +27,22 @@ class MCTSAgent():
         for i in range(self.rollout_iter):
             board = initBoard
             valids = self.game.getValidMoves(board, 1)
-            # valid_acts = np.where(valids == 1)[0]
-            # selected_act = np.random.choice(valid_acts, replace=False)
             act = np.random.randint(self.game.getActionSize())
             while valids[act] !=1:
                 act = np.random.randint(self.game.getActionSize())
             board, curPlayer = self.game.getNextState(board, C, act)
             while self.game.getGameEnded(board, curPlayer)==0:
                 valids = self.game.getValidMoves(board, 1)
-                # valid_acts = np.where(valids == 1)[0]
                 act = np.random.randint(self.game.getActionSize())
                 while valids[act] !=1:
                     act = np.random.randint(self.game.getActionSize())
-                # selected_act = np.random.choice(valid_acts, replace=False)
                 board, curPlayer = self.game.getNextState(board, curPlayer, act)
             Q.append(self.game.getGameEnded(board, rollout_player))
         return np.mean(Q)
 
     def selection(self, board, curPlayer):
+        s = board.tostring()
         valids = self.game.getValidMoves(board, curPlayer)
-        #print('Selection valids', valids)
         possible_acts = np.arange(self.game.getActionSize())
         valid_acts = possible_acts[valids==1]
         neg_acts = possible_acts[valids==0]
@@ -54,28 +50,22 @@ class MCTSAgent():
         ucb_values[neg_acts] = -1e+11
         for a in valid_acts:
             next_s, _ = self.game.getNextState(board, curPlayer, a)
-            #next_s = str(next_s.flatten())
             next_s = next_s.tostring()
-            ucb_values[a] = self.UCB(self.state_stats[next_s][1], self.iters, self.state_stats[next_s][0])
-        #print('\nucb', ucb_values)
+            ucb_values[a] = self.UCB(self.state_stats[next_s][1], self.state_stats[s][0], self.state_stats[next_s][0])
         max_ = max(ucb_values)
         max_indx = np.where(ucb_values == max_)[0]
         if len(max_indx) != 1:
             action = np.random.choice(max_indx)
-            #print('Random act', action)
             return action
         action = np.argmax(ucb_values)
-        #print('\naction: ', action)
         return action
 
     def expand(self, board, curPlayer):
-        #print('expand player', curPlayer)
         possible_acts = np.arange(self.game.getActionSize())
         valids = self.game.getValidMoves(board, curPlayer)
         valid_acts = possible_acts[valids==1]
         for act in valid_acts:
             next_s, _ = self.game.getNextState(board, curPlayer, act)
-            #next_s = str(next_s.flatten())
             next_s = next_s.tostring()
             if next_s not in self.state_stats:
                 self.state_stats[next_s] = np.array([0.,0.])
@@ -94,14 +84,10 @@ class MCTSAgent():
         
 
         c = datetime.now() - self.start
-        #microsecs = c.microseconds
-        #if c.seconds > 0:
         self.microsecs = c.seconds * 1e6 + c.microseconds
-        #print(microsecs)
         if self.microsecs >= self.time:
             return
  
-        #s = str(board.flatten())
         s = board.tostring()
         self.history.append(s)
 
@@ -114,7 +100,6 @@ class MCTSAgent():
                 return
 
             if self.sim == 0:
-                #print('Prwto iter MONO')
                 self.state_stats[s] = np.array([0.,0.])
                 curPlayer = 1
                 return
@@ -143,46 +128,25 @@ class MCTSAgent():
         curPlayer = 1
         self.start = datetime.now()
         for self.sim in range(self.iters):
-            #print('\niter: ', self.sim)
-            #print('---------------------')
             self.history = []
-            #print(self.sim)
             self.simulate(board, curPlayer)
-            #c = datetime.now() - start
-            #microsecs = c.microseconds
-            #if c.seconds > 0:
-            #microsecs = c.seconds * 1e6 + c.microseconds
-            #print(microsecs)
             if self.microsecs >= self.time:
-                #print('======')
-                #print(self.microsecs)
-                #print('======')
-                #print('\n')
                 break
 
         possible_acts = np.arange(self.game.getActionSize())
         valids = self.game.getValidMoves(board, 1)
         valid_acts = possible_acts[valids==1]
-        # print('Poss: ', possible_acts)
-        # print('valids: ', valids)
-        # print('Valid_acts: ', valid_acts)
 
         if len(valid_acts) == 1:
             return valid_acts[0]
         else:
-            #print(self.state_stats)
             candidates = list(self.state_stats.values())[1:len(valid_acts)+1]
             candidates = np.array(list(map(lambda x: x[1], candidates)))
-            # print('stats', list(self.state_stats.items())[1:len(valid_acts)+1])
-            #print(candidates)
             max_indx = np.where(candidates == max(candidates))[0]
             if len(max_indx) != 1:
                 action = np.random.choice(valid_acts[max_indx])
-               # print('Random', action)
                 return action
 
             indx_max = candidates.argmax()
-            #print("indx_max: ", indx_max)
             action = valid_acts[indx_max]
-            #print('action', action)
             return action

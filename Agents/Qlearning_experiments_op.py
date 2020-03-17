@@ -4,34 +4,43 @@ write a simple Q-learning player
 import numpy as np
 import sys
 from time import time
+import matplotlib.pyplot as plt
 import pickle
 from tqdm import tqdm
+from connect4.Connect4Players import *
+
+"""
+The script is QAgent trained against the OneStepLookahead player
+"""
 
 class END(Exception): pass
-# alalalala
 
 class QAgent():
-    def __init__(self, game, episodes, lr, epsilon, dc, e_min):
+    def __init__(self, game, episodes, lr, epsilon, dc, e_min, ep_arena=None):
         self.Q = {}
         self.game = game
         self.episodes = episodes
-        self.ep = 0
+        #self.ep = 0
         self.lr = lr
         self.epsilon = []
         self.flag = True
         self.wins = 0
         self.draw = 0
         self.loss = 0
-        self.gamma = 0.9
+        self.ep_arena = ep_arena
+        self.gamma = 0.99
         self.tau = 0.01
         self.e = epsilon
         self.dc = dc
         self.e_ = e_min
+        self.OP = OneStepLookaheadConnect4Player(game=game, verbose=False)
         self.config = {'epsilon:':self.e,
                         'discount_e:':self.dc,
                         'epsilon_min:':self.e_,
                         'gamma:':self.gamma,
                         'learning rate:': self.lr}
+        self.total_eps = []
+        self.total_wins = []
 
     def update(self, R, Q_prime, s):
         Q_new = self.Q[s] + self.lr*(R + self.gamma*Q_prime - self.Q[s])
@@ -44,16 +53,13 @@ class QAgent():
             self.epsilon.append(self.e)
             if self.e > self.e_:
                 self.e *= self.dc
-            #print('Epsilon Action: ', action)
             return action
-        #print('Actions_q: '+ str(actions_q))
         max_ = max(actions_q)
         max_indx = np.where(actions_q == max_)[0]
         if len(max_indx) != 1:
             action = np.random.choice(max_indx)
             return action
         action = np.argmax(actions_q)
-        #print('Policy Action: ', action)
         return action
 
     def init_q(self, board):
@@ -66,26 +72,16 @@ class QAgent():
         actions_q[neg_acts] = -1e+9
         for action in valid_acts:
             next_s, _ = self.game.getNextState(board, 1, action)
-            #s_next = str(next_s.flatten())
             s_next = next_s.tostring()
             temp.append(s_next)
             if s_next not in self.Q:
                 self.Q[s_next] = 0.
-            #print('Q[new_state]: ', self.Q[s_next])
             actions_q[action] = self.Q[s_next]
         return temp, actions_q
 
 
     def opponent_play(self, board, curPlayer):
-        # possible_acts = np.arange(self.game.getActionSize())
-        # valids = self.game.getValidMoves(board, curPlayer)
-        # valid_acts = possible_acts[valids==1]
-        # action = np.random.choice(valid_acts)
-        #print('Action diko tou: ', action)
-        act = np.random.randint(self.game.getActionSize())
-        valids = self.game.getValidMoves(board,1)
-        while valids[act] !=1:
-            act = np.random.randint(self.game.getActionSize())
+        act = self.OP.play(board)
         board, curPlayer = self.game.getNextState(board, curPlayer, act)
         return board, curPlayer
 
@@ -102,8 +98,6 @@ class QAgent():
             else:
                 self.draw += 1
             end = time()
-            #print("\nEpisode: %s  |  Reward: %s " %(self.ep, ret))
-            # self.ep += 1
             raise END
         else:
             pass
@@ -119,17 +113,17 @@ class QAgent():
 
 
     def simulate(self):
-        self.total_eps = []
-        self.total_wins = []
         init_board = self.game.getInitBoard()
         s = init_board.tostring()
         temp = []
-        for self.ep in tqdm(range(self.episodes)):
-            if self.ep == 30000:
+        for self.ep in tqdm(range(self.cur_episode, self.episodes + 1)):
+            if self.ep == int(np.round(self.episodes * (2/3))) and self.dc == 1:
                 self.e = 0
-            if self.ep % 3000 == 0:
-                self.total_wins.append(self.wins)
-                self.total_eps.append(self.ep)
+            if self.ep != 0:
+                if self.ep % self.ep_arena == 0:
+                    self.total_wins.append(self.wins)
+                    self.total_eps.append(self.ep)
+                    return # make him play in arena
 
             board = init_board
             # Init the first episode
@@ -159,43 +153,26 @@ class QAgent():
                     # If board == Terminal then update and break
                     self.check_terminal(board, s)
 
-                    # Calculate Max_Q for Q_prime
-                    ret, Q_prime = self.max_q(temp)
-                    # Update
-                    self.update(ret, Q_prime, s)
-
                     # Opponent exerts random action!
                     board, curPlayer = self.opponent_play(board, curPlayer)
                     # check if opponent's action resulted in terminal state
                     # If board == Terminal then update and break
                     self.check_terminal(board, s)
- 
 
                     # Expand
                     temp, actions_q = self.init_q(board)
                     # Calculate Max_Q for Q_prime
-                    ret, Q_prime = self.max_q(temp)                           
+                    ret, Q_prime = self.max_q(temp)
+                    # Update
+                    self.update(ret, Q_prime, s)
 
             except END:
                 pass
 
-
-    def train(self):
+    def train(self, cur_episode=0):
+        self.cur_episode = cur_episode
         general_time = time()
-        print('Train Q-Agent for %s episodes >_' %self.episodes)
         self.simulate()
-        #np.save('wins', self.total_wins)
-        #np.save('eps', self.total_eps)
-        #print('Q:\n' + str(self.Q))
-        print('Wins: %s | Loss: %s | Draw: %s |' %(self.wins, self.loss, self.draw)\
-         + ' Total Training Time: ' + str(round(time()-general_time)) + ' secs'  )
-        print('\nConfiguration: ', self.config)
-
-        with open('Q_table.pickle', 'wb') as handle:
-            pickle.dump(self.Q, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-        print('\nThe training is finished and Qtable is exported')
-        print('')
 
 
     def play(self, board):
@@ -218,9 +195,4 @@ class QAgent():
             action = np.random.choice(max_indx)
             return action
         final_action = np.argmax(actions_q)
-        return final_action                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
-
-
-
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
-                                                          
+        return final_action

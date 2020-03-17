@@ -1,5 +1,5 @@
 import Arena
-from MCTS_time import MCTSAgent
+from Agents.MCTS_time import MCTSAgent
 from connect4.Connect4Game import Connect4Game, display
 from connect4.Connect4Players import *
 from connect4.Connect4Logic import Board

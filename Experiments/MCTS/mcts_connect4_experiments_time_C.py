@@ -1,5 +1,5 @@
 import Arena
-from MCTS_time import MCTSAgent
+from Agents.MCTS_time import MCTSAgent
 from connect4.Connect4Game import Connect4Game, display
 from connect4.Connect4Players import *
 from connect4.Connect4Logic import Board
@@ -9,7 +9,12 @@ from time import time
 from joblib import Parallel, delayed
 import multiprocessing
 
-
+"""
+The script is for the MCTS experiments for the Connect4Game for different C.
+Experimentation on 10 different microseconds for response time and 5 different C values.
+On 3 different configurations of Connect4Game :games = [(4, 5, 3), (5, 6, 4), (6, 7, 4)].
+Against both Random and OneStepLookahead opponent.
+"""
 def experiment(m):
     for c in range(6):
         mcts = MCTSAgent(g, iters=100000000, c=c, rollout_iter=1, time=m).play

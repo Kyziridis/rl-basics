@@ -1,5 +1,5 @@
 import Arena
-from MCS_time import MCSAgent
+from Agents.MCS_time import MCSAgent
 from connect4.Connect4Game import Connect4Game, display
 from connect4.Connect4Players import *
 from connect4.Connect4Logic import Board
@@ -9,7 +9,12 @@ from time import time
 from joblib import Parallel, delayed
 import multiprocessing
 
-
+"""
+The script is for the MCS experiments for the Connect4Game.
+Experimentation on 10 different microseconds for response time.
+On 3 different configurations of Connect4Game :games = [(4, 5, 3), (5, 6, 4), (6, 7, 4)].
+Against both Random and OneStepLookahead opponent.
+"""
 def experiment(m):
     for rep in range(5):
         if player == 'rp':
